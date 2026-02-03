@@ -7,12 +7,12 @@
             <div class="space-y-1">
                 <div class="flex items-center gap-2">
                     <h2 class="text-base font-semibold text-gray-900 dark:text-white">
-                        Categorías de gasto
+                        Tipos de gasto
                     </h2>
                 </div>
 
                 <p class="text-xs text-gray-500 dark:text-gray-400 max-w-2xl">
-                    Administra las categorías por unidad de negocio, tipo de gasto y proveedor.
+                    Administra el catálogo de tipos de gasto para clasificar categorías y reportes.
                 </p>
             </div>
 
@@ -24,7 +24,7 @@
                            dark:bg-indigo-500 dark:hover:bg-indigo-400"
                 >
                     <i class="fa-thin fa-plus mr-2"></i>
-                    Nueva categoría
+                    Nuevo tipo
                 </button>
             </div>
         </div>
@@ -46,7 +46,7 @@
                             type="text"
                             wire:model.live.debounce.400ms="search"
                             wire:keydown.escape="$set('search','')"
-                            placeholder="Gasto, proveedor, unidad, tipo…"
+                            placeholder="Buscar por nombre…"
                             class="block w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-xs text-gray-900 shadow-sm
                                    focus:border-indigo-500 focus:ring-indigo-500
                                    dark:border-white/15 dark:bg-gray-900 dark:text-gray-100"
@@ -77,7 +77,7 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                     Total:
                     <span class="font-semibold text-gray-800 dark:text-gray-200">
-                        {{ $categories->total() }}
+                        {{ $expenseTypes->total() }}
                     </span>
                 </p>
             </div>
@@ -101,7 +101,7 @@
             <p class="text-sm font-semibold text-gray-900 dark:text-white">Listado</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">
                 Mostrando:
-                <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $categories->count() }}</span>
+                <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $expenseTypes->count() }}</span>
             </p>
         </div>
 
@@ -121,19 +121,7 @@
                     <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-950/60 backdrop-blur">
                     <tr>
                         <th class="py-3.5 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 sm:pl-6 dark:text-gray-300">
-                            Unidad
-                        </th>
-
-                        <th class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300">
-                            Tipo de gasto
-                        </th>
-
-                        <th class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300">
-                            Gasto
-                        </th>
-
-                        <th class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300">
-                            Proveedor
+                            Nombre
                         </th>
 
                         <th class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300">
@@ -147,18 +135,9 @@
                     </thead>
 
                     <tbody class="divide-y divide-gray-200 dark:divide-white/10">
-                    @forelse($categories as $category)
+                    @forelse($expenseTypes as $et)
                         @php
-                            $bu = $category->business_unit ?? '—';
-
-                            $buClass = match($bu) {
-                                'Jade' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-300',
-                                'Fuego Ambar' => 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-300',
-                                'KIN' => 'bg-indigo-50 text-indigo-700 ring-indigo-600/20 dark:bg-indigo-900/30 dark:text-indigo-300',
-                                default => 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/30 dark:text-gray-200',
-                            };
-
-                            $active = (bool) $category->is_active;
+                            $active = (bool) $et->is_active;
 
                             $statusClass = $active
                                 ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-300'
@@ -167,29 +146,10 @@
 
                         <tr class="hover:bg-gray-50/60 dark:hover:bg-white/5">
 
-                            {{-- Unidad --}}
-                            <td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm sm:pl-6">
-                                <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset {{ $buClass }}">
-                                    {{ $bu }}
-                                </span>
-                            </td>
-
-                            {{-- Tipo gasto --}}
-                            <td class="px-3 py-3 text-sm text-gray-900 dark:text-white">
-                                {{ $category->expenseType?->expense_type_name ?? '—' }}
-                            </td>
-
-                            {{-- Gasto --}}
-                            <td class="px-3 py-3 text-sm text-gray-900 dark:text-white">
-                                <div class="font-medium truncate max-w-[340px]" title="{{ $category->expense_name }}">
-                                    {{ $category->expense_name ?? '—' }}
-                                </div>
-                            </td>
-
-                            {{-- Proveedor --}}
-                            <td class="px-3 py-3 text-sm text-gray-700 dark:text-gray-200">
-                                <div class="truncate max-w-[280px]" title="{{ $category->provider_name }}">
-                                    {{ $category->provider_name ?: '—' }}
+                            {{-- Nombre --}}
+                            <td class="py-3 pl-4 pr-3 text-sm text-gray-900 sm:pl-6 dark:text-white">
+                                <div class="font-medium truncate max-w-[520px]" title="{{ $et->expense_type_name }}">
+                                    {{ $et->expense_type_name ?? '—' }}
                                 </div>
                             </td>
 
@@ -207,7 +167,7 @@
                                     {{-- Editar --}}
                                     <button
                                         type="button"
-                                        wire:click="edit({{ $category->id }})"
+                                        wire:click="edit({{ $et->id }})"
                                         class="group relative inline-flex items-center justify-center rounded-md p-2 text-indigo-600 hover:bg-indigo-50
                                                dark:text-indigo-300 dark:hover:bg-indigo-900/30 transition"
                                         aria-label="Editar"
@@ -222,7 +182,7 @@
                                     {{-- Eliminar --}}
                                     <button
                                         type="button"
-                                        wire:click="deleteConfirmation({{ $category->id }})"
+                                        wire:click="deleteConfirmation({{ $et->id }})"
                                         wire:loading.attr="disabled"
                                         wire:target="deleteConfirmation,destroy"
                                         class="group relative inline-flex items-center justify-center rounded-md p-2 text-rose-600 hover:bg-rose-50
@@ -241,12 +201,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-10 text-center">
+                            <td colspan="3" class="py-10 text-center">
                                 <div class="mx-auto flex max-w-md flex-col items-center gap-2 text-gray-600 dark:text-gray-300">
                                     <i class="fa-thin fa-folder-open text-2xl opacity-70"></i>
-                                    <p class="text-sm font-semibold">No hay categorías con los filtros actuales</p>
+                                    <p class="text-sm font-semibold">No hay tipos de gasto con los filtros actuales</p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                                        Prueba limpiando la búsqueda o creando una nueva categoría.
+                                        Prueba limpiando la búsqueda o creando un nuevo tipo.
                                     </p>
                                     <div class="mt-2 flex items-center gap-2">
                                         <button
@@ -266,7 +226,7 @@
                                                    dark:bg-indigo-500 dark:hover:bg-indigo-400"
                                         >
                                             <i class="fa-thin fa-plus"></i>
-                                            Nueva categoría
+                                            Nuevo tipo
                                         </button>
                                     </div>
                                 </div>
@@ -279,11 +239,11 @@
         </div>
 
         <div class="px-4 py-3 sm:px-6">
-            {{ $categories->onEachSide(1)->links() }}
+            {{ $expenseTypes->onEachSide(1)->links() }}
         </div>
     </div>
 
     {{-- MODALS --}}
-    @include('livewire.modals.category-form')
+    @include('livewire.modals.expense-type-form')
     @livewire('confirm-modal')
 </div>

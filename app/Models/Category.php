@@ -8,6 +8,7 @@ class Category extends Model
 {
     protected $fillable = [
         'business_unit',
+        'expense_type_id',
         'expense_name',
         'provider_name',
         'is_active',
@@ -16,4 +17,10 @@ class Category extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function expenseType()
+    {
+        return $this->belongsTo(ExpenseType::class);
+    }
+
 }

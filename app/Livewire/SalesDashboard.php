@@ -2,55 +2,110 @@
 
 namespace App\Livewire;
 
-use App\Models\cash_extractions; // 👈 ajusta al nombre real de tu modelo
+use App\Models\cash_extractions;
+use App\Models\CashExtraction;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Rule;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class SalesDashboard extends Component
 {
+    // Filtros en URL (opcional, pero útil)
+    #[Url]
+    public ?string $business_unit = null; // null = todas
+
+    #[Url]
+    #[Rule('nullable|regex:/^\d{4}-\d{2}$/')]
+    public ?string $period_key = null; // YYYY-MM
+
+    #[Url]
     #[Rule('nullable|date')]
     public ?string $from_date = null;
 
+    #[Url]
     #[Rule('nullable|date')]
     public ?string $to_date = null;
 
+    // Cards
     public float $totalSales  = 0.0;
     public float $totalCash   = 0.0;
     public float $totalDebit  = 0.0;
     public float $totalCredit = 0.0;
 
+    public function mount(): void
+    {
+        // Default: mes actual
+        $this->period_key ??= now()->format('Y-m');
+        $this->applyPeriodToDates();
+    }
+
+    public function updatedPeriodKey(): void
+    {
+        $this->applyPeriodToDates();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->business_unit = null;
+        $this->period_key = now()->format('Y-m');
+        $this->applyPeriodToDates();
+    }
+
     public function clearDateFilter(): void
     {
+        // mantiene unidad/periodo, solo limpia rango manual
         $this->from_date = null;
         $this->to_date   = null;
     }
 
-    /**
-     * Construye los datos que necesitan las gráficas
-     */
-    protected function buildChartData(): array
+    private function applyPeriodToDates(): void
     {
-        $baseQuery = cash_extractions::query()
-            // si quieres solo los que están procesados/validados ajusta aquí
-            // ->whereIn('status', ['procesado', 'validado']);
-        ;
+        // Si period_key es válido, se vuelve la “fuente de verdad” del rango
+        $pk = $this->period_key;
+
+        if (!$pk || !preg_match('/^\d{4}-\d{2}$/', $pk)) {
+            $this->period_key = now()->format('Y-m');
+            $pk = $this->period_key;
+        }
+
+        $start = \Carbon\Carbon::createFromFormat('Y-m', $pk)->startOfMonth()->toDateString();
+        $end   = \Carbon\Carbon::createFromFormat('Y-m', $pk)->endOfMonth()->toDateString();
+
+        $this->from_date = $start;
+        $this->to_date   = $end;
+    }
+
+    private function baseQuery()
+    {
+        $q = CashExtraction::query();
+
+        if ($this->business_unit) {
+            $q->where('business_unit', $this->business_unit);
+        }
 
         if ($this->from_date) {
-            $baseQuery->whereDate('operation_date', '>=', $this->from_date);
+            $q->whereDate('operation_date', '>=', $this->from_date);
         }
 
         if ($this->to_date) {
-            $baseQuery->whereDate('operation_date', '<=', $this->to_date);
+            $q->whereDate('operation_date', '<=', $this->to_date);
         }
 
-        // 🔹 1) Totales globales (para cards)
+        return $q;
+    }
+
+    protected function buildChartData(): array
+    {
+        $baseQuery = $this->baseQuery();
+
+        // ✅ Totales globales (cards) con COALESCE para evitar NULL issues
         $totals = (clone $baseQuery)
             ->selectRaw('
-                SUM(cash_sales + debit_card_sales + credit_card_sales) as total_sales,
-                SUM(cash_sales)        as total_cash,
-                SUM(debit_card_sales)  as total_debit,
-                SUM(credit_card_sales) as total_credit
+                SUM(COALESCE(cash_sales,0) + COALESCE(debit_card_sales,0) + COALESCE(credit_card_sales,0)) as total_sales,
+                SUM(COALESCE(cash_sales,0))        as total_cash,
+                SUM(COALESCE(debit_card_sales,0))  as total_debit,
+                SUM(COALESCE(credit_card_sales,0)) as total_credit
             ')
             ->first();
 
@@ -59,11 +114,11 @@ class SalesDashboard extends Component
         $this->totalDebit  = (float) ($totals->total_debit  ?? 0);
         $this->totalCredit = (float) ($totals->total_credit ?? 0);
 
-        // 🔹 2) Ventas por unidad de negocio
+        // ✅ Ventas por unidad (si el filtro es “todas”, tiene sentido mostrarlo; si no, también sirve como confirmación)
         $byUnit = (clone $baseQuery)
             ->select(
                 'business_unit',
-                DB::raw('SUM(cash_sales + debit_card_sales + credit_card_sales) as total_amount')
+                DB::raw('SUM(COALESCE(cash_sales,0) + COALESCE(debit_card_sales,0) + COALESCE(credit_card_sales,0)) as total_amount')
             )
             ->groupBy('business_unit')
             ->orderBy('business_unit')
@@ -72,12 +127,12 @@ class SalesDashboard extends Component
         $labelsUnits = $byUnit->pluck('business_unit')->values()->toArray();
         $dataUnits   = $byUnit->pluck('total_amount')->map(fn ($v) => (float) $v)->values()->toArray();
 
-        // 🔹 3) Ventas por método de pago
+        // ✅ Ventas por método
         $byMethod = (clone $baseQuery)
             ->selectRaw('
-                SUM(cash_sales)        as total_cash,
-                SUM(debit_card_sales)  as total_debit,
-                SUM(credit_card_sales) as total_credit
+                SUM(COALESCE(cash_sales,0))        as total_cash,
+                SUM(COALESCE(debit_card_sales,0))  as total_debit,
+                SUM(COALESCE(credit_card_sales,0)) as total_credit
             ')
             ->first();
 

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cash_extractions', function (Blueprint $table) {
+        Schema::create('cash_xtraction', function (Blueprint $table) {
             $table->id();
 
             // Usuario que hizo el corte (opcional)
@@ -19,13 +19,17 @@ return new class extends Migration
                 ->nullable()
                 ->constrained()
                 ->nullOnDelete();
+            $table->string('business_unit');
 
             // Contexto
-            $table->unsignedTinyInteger('turno');          // 1 ó 2
-            $table->date('operation_date');                // fecha operativa del turno
+            $table->unsignedTinyInteger('turno');
+            $table->date('operation_date');
+
+            $table->string('cash_validation_result')->nullable();
+            $table->text('cash_validation_note')->nullable();
 
             // Archivo
-            $table->string('image_path');                  // storage/app/... o public/...
+            $table->string('image_path');
             $table->string('image_original_name')->nullable();
 
             // Detalle ventas por método de pago
@@ -52,10 +56,15 @@ return new class extends Migration
             $table->json('extraction_metadata')->nullable();
 
             // Estado del corte
-            $table->string('status', 30)->default('procesado'); // procesado | validado | rechazado | etc.
+            $table->string('status', 30)->default('procesado');
             $table->string('error_message')->nullable();
 
             $table->timestamps();
+
+            $table->index('operation_date');
+            $table->index(['operation_date','turno']);
+            $table->index('status');
+            $table->index('business_unit');
         });
     }
 
@@ -64,6 +73,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cash_extractions');
+        Schema::dropIfExists('cashExtraction');
     }
 };

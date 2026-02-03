@@ -13,13 +13,37 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-                    <flux:navlist.item icon="user" :href="route('users')" :current="request()->routeIs('users')" wire:navigate>{{ __('Users') }}</flux:navlist.item>
-                    <flux:navlist.item icon="tag" :href="route('categories')" :current="request()->routeIs('categories')" wire:navigate>{{ __('Categorías') }}</flux:navlist.item>
-                    <flux:navlist.item icon="banknotes" :href="route('corte')" :current="request()->routeIs('corte')" wire:navigate>{{ __('Corte de Caja') }}</flux:navlist.item>
-                    <flux:navlist.item icon="currency-dollar" :href="route('supplies')" :current="request()->routeIs('supplies')" wire:navigate>{{ __('Compras y Pagos') }}</flux:navlist.item>
+
+                    <x-nav-item :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="fa-gauge" tone="indigo">
+                        Dashboard
+                    </x-nav-item>
+
+                    <x-nav-item :href="route('users')" :active="request()->routeIs('users')" icon="fa-users" tone="violet">
+                        Users
+                    </x-nav-item>
+
+                    <x-nav-item :href="route('expense-types')" :active="request()->routeIs('expense-types')" icon="fa-tags" tone="amber">
+                        Tipo Gasto
+                    </x-nav-item>
+
+                    <x-nav-item :href="route('categories')" :active="request()->routeIs('categories')" icon="fa-folder-tree" tone="cyan">
+                        Categorías
+                    </x-nav-item>
+
+                    <x-nav-item :href="route('corte')" :active="request()->routeIs('corte')" icon="fa-cash-register" tone="emerald">
+                        Corte de Caja
+                    </x-nav-item>
+
+                    <x-nav-item :href="route('supplies')" :active="request()->routeIs('supplies')" icon="fa-basket-shopping" tone="rose">
+                        Compras y Pagos
+                    </x-nav-item>
+
                 </flux:navlist.group>
             </flux:navlist>
+
+
+
+
 
             <flux:spacer />
 

@@ -37,7 +37,8 @@
         categories: @js(
             $categories->map(fn($c) => [
                 'id'    => $c->id,
-                'label' => $c->business_unit.' · '.$c->expense_name.' · '.$c->provider_name,
+                'label' => $c->business_unit.' · '.$c->expenseType?->expense_type_name.' · '.$c->expense_name.' · '.$c->provider_name,
+
             ])
         ),
         init() {
@@ -131,6 +132,19 @@
                     </div>
                 </div>
 
+                <div class="flex items-center gap-2">
+                    <input
+                        id="is_adjustment"
+                        type="checkbox"
+                        wire:model.live="is_adjustment"
+                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500
+               dark:border-white/15 dark:bg-gray-900"
+                    >
+                    <label for="is_adjustment" class="text-xs text-gray-700 dark:text-gray-200">
+                        Es ajuste / devolución (se guardará como negativo)
+                    </label>
+                </div>
+
 
                 {{-- Monto del gasto + tipo de pago --}}
                 <div class="grid gap-4 sm:grid-cols-2">
@@ -150,6 +164,13 @@
                                 placeholder="Ej. 1,250.00"
                             >
                         </div>
+                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                            @if($is_adjustment)
+                                Se registrará como <span class="font-semibold text-rose-600 dark:text-rose-400">monto negativo</span>.
+                            @else
+                                Registro normal (monto positivo).
+                            @endif
+                        </p>
                         @error('amount')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror

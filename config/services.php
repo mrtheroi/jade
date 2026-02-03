@@ -34,5 +34,9 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'extract' => [
+        'webhook_url' => env('EXTRACT_WEBHOOK_URL'),
+        'timeout' => (int) env('EXTRACT_TIMEOUT', 30),
+    ],
 
 ];

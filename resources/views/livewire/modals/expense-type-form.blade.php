@@ -6,10 +6,10 @@
             <div class="flex items-start justify-between border-b border-gray-100 px-6 py-4 dark:border-white/10">
                 <div>
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-                        {{ $categoryId ? 'Editar categoría' : 'Nueva categoría' }}
+                        {{ $expenseTypeId ? 'Editar categoría' : 'Nueva categoría' }}
                     </h3>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Define la unidad de negocio, el tipo de gasto y su proveedor.
+                        Tipo de gasto.
                     </p>
                 </div>
 
@@ -28,87 +28,22 @@
 
             {{-- Formulario --}}
             <form wire:submit.prevent="save" class="space-y-5 px-6 py-5">
-                {{-- Unidad de negocio --}}
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Unidad de negocio
-                    </label>
-                    <div class="mt-1">
-                        <select
-                            wire:model.defer="business_unit"
-                            class="block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-sm text-gray-900 shadow-sm
-                   focus:border-indigo-500 focus:ring-indigo-500
-                   dark:border-white/15 dark:bg-gray-900 dark:text-gray-100"
-                        >
-                            <option value="">Selecciona una unidad</option>
-                            <option value="Jade">Jade</option>
-                            <option value="Fuego Ambar">Fuego Ambar</option>
-                            <option value="KIN">KIN</option>
-                        </select>
-                    </div>
-                    @error('business_unit')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
                 {{-- Nombre del gasto --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Nombre del gasto
+                        Tipo del Gasto
                     </label>
                     <div class="mt-1">
                         <input
                             type="text"
-                            wire:model.defer="expense_name"
+                            wire:model.defer="expense_type_name"
                             class="block w-full rounded-md border-gray-300 bg-white py-2 px-3 text-sm text-gray-900 shadow-sm
                                        focus:border-indigo-500 focus:ring-indigo-500
                                        dark:border-white/15 dark:bg-gray-900 dark:text-gray-100"
-                            placeholder="Ej. Compra de insumos, Luz, Renta..."
+                            placeholder="Ej. Mano de Obra, Gastos Operativos.."
                         >
                     </div>
-                    @error('expense_name')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Categoría del gasto</label>
-                    <div class="mt-1">
-                        <select
-                            wire:model.defer="expense_type_id"
-                            class="block w-full rounded-md border-gray-300 bg-white py-2 px-3 text-sm text-gray-900 shadow-sm
-                                           focus:border-indigo-500 focus:ring-indigo-500
-                                           dark:border-white/15 dark:bg-gray-900 dark:text-gray-100"
-                        >
-                            <option value="">Selecciona</option>
-                            @foreach($expenseType as $expense)
-                                <option value="{{ $expense->id }}">{{ $expense->expense_type_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @error('expense_type_id')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-
-
-                {{-- Nombre del proveedor --}}
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Nombre del proveedor
-                    </label>
-                    <div class="mt-1">
-                        <input
-                            type="text"
-                            wire:model.defer="provider_name"
-                            class="block w-full rounded-md border-gray-300 bg-white py-2 px-3 text-sm text-gray-900 shadow-sm
-                                       focus:border-indigo-500 focus:ring-indigo-500
-                                       dark:border-white/15 dark:bg-gray-900 dark:text-gray-100"
-                            placeholder="Ej. Coca-Cola, CFE, Arrendadora..."
-                        >
-                    </div>
-                    @error('provider_name')
+                    @error('expense_type_name')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -163,7 +98,7 @@
                             <path class="opacity-75" fill="currentColor"
                                   d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                         </svg>
-                        <span>{{ $categoryId ? 'Guardar cambios' : 'Crear categoría' }}</span>
+                        <span>{{ $expenseTypeId ? 'Guardar cambios' : 'Crear categoría' }}</span>
                     </button>
                 </div>
             </form>

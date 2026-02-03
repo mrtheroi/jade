@@ -64,15 +64,31 @@
                         <div class="flex justify-between gap-4">
                             <dt class="text-gray-500 dark:text-gray-400">Estado</dt>
                             <dd class="text-right">
-                                <span class="inline-flex items-center rounded-md
-                                             {{ $selectedExtraction->status === 'validado'
-                                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-300 dark:ring-emerald-500/50'
-                                                : 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-500/50' }}
-                                             px-2 py-1 text-xs font-medium ring-1 ring-inset">
-                                    {{ ucfirst($selectedExtraction->status) }}
+                                @php
+                                    $status = $selectedExtraction->status;
+                                    $result = $selectedExtraction->cash_validation_result; // 'cuadro|faltante|sobrante' o null
+                                    $labelResult = match($result) {
+                                        'cuadro' => 'Cuadró',
+                                        'faltante' => 'Faltante',
+                                        'sobrante' => 'Sobrante',
+                                        default => null,
+                                    };
+                                @endphp
+
+                                <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset
+                                    {{ $status === 'validado'
+                                        ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-300 dark:ring-emerald-500/50'
+                                        : 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-500/50'
+                                    }}
+                                    ">
+                                    {{ ucfirst($status) }}
+                                    @if($status === 'validado' && $labelResult)
+                                        <span class="ml-1 opacity-80">({{ $labelResult }})</span>
+                                    @endif
                                 </span>
                             </dd>
                         </div>
+
 
                         <div class="flex justify-between gap-4">
                             <dt class="text-gray-500 dark:text-gray-400">Run ID</dt>
@@ -95,6 +111,7 @@
                                 @endif
                             </dd>
                         </div>
+
                     </dl>
                 </div>
 
@@ -182,39 +199,108 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="mt-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-gray-900">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            Resultado de validación (Administrador)
+                        </p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Selecciona el resultado tras contar el efectivo.
+                        </p>
 
+                        <div class="mt-3">
+                            <select
+                                wire:model="validation_result"
+                                @if($selectedExtraction->status === 'validado') disabled @endif
+                                class="block w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm text-gray-900 shadow-sm
+           focus:border-indigo-500 focus:ring-indigo-500
+           disabled:opacity-60 disabled:cursor-not-allowed
+           dark:border-white/15 dark:bg-gray-900 dark:text-gray-100"
+                            >
+                                <option value="cuadro">Cuadró</option>
+                                <option value="faltante">Validado con faltante</option>
+                                <option value="sobrante">Validado con sobrante</option>
+                            </select>
+
+                            @if(in_array($validation_result, ['faltante', 'sobrante']))
+                                <div class="mt-3">
+                                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-200">
+                                        Nota (obligatoria)
+                                    </label>
+
+                                    <textarea
+                                        wire:model.defer="validation_note"
+                                        rows="3"
+                                        @disabled($selectedExtraction->status === 'validado')
+                                        class="mt-1 block w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 shadow-sm
+                   focus:border-indigo-500 focus:ring-indigo-500
+                   disabled:opacity-60 disabled:cursor-not-allowed
+                   dark:border-white/15 dark:bg-gray-900 dark:text-gray-100"
+                                        placeholder="Ej. Faltó $200, se revisará con cajero / hubo retiro / etc."
+                                    ></textarea>
+
+                                    @if($selectedExtraction->status === 'validado')
+                                        <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                                            Esta nota ya fue registrada y no se puede modificar.
+                                        </p>
+                                    @endif
+
+                                    @error('validation_note')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
+
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {{-- Footer modal --}}
             {{-- Footer modal --}}
+            {{-- Footer modal --}}
             <div class="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-3 dark:border-white/10">
-                {{-- Botón de validar (solo si aún está procesado) --}}
                 @if($selectedExtraction->status !== 'validado')
                     <button
                         type="button"
-                        wire:click="markAsValidated"
-                        class="inline-flex items-center rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm
+                        wire:click="validateCashExtraction"
+                        wire:loading.attr="disabled"
+                        wire:target="validateCashExtraction"
+                        class="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm
                    hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-                   focus-visible:outline-emerald-600"
+                   focus-visible:outline-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <svg class="mr-1.5 h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none"
-                             viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M4.5 12.75l6 6 9-13.5" />
+                        {{-- Loader sutil --}}
+                        <svg
+                            wire:loading
+                            wire:target="validateCashExtraction"
+                            class="mr-2 h-4 w-4 animate-spin text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10"
+                                    stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                         </svg>
-                        Marcar como validado
+
+                        <span wire:loading.remove wire:target="validateCashExtraction">Validar corte</span>
+                        <span wire:loading wire:target="validateCashExtraction">Validando…</span>
                     </button>
+                @else
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+            Este corte ya está validado.
+        </span>
                 @endif
 
                 <button
                     type="button"
                     wire:click="closeDetail"
-                    class="rounded-md px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                    class="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100
+               dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                     Cerrar
                 </button>
             </div>
+
         </div>
     </div>
 @endif

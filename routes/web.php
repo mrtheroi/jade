@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardExportController;
 use App\Livewire\CategoryController;
 use App\Livewire\CorteController;
+use App\Livewire\ExpenseTypeController;
 use App\Livewire\SalesDashboard;
 use App\Livewire\SuppliesController;
 use App\Livewire\UserController;
@@ -18,7 +19,7 @@ Route::get('/', function () {
 //    ->middleware(['auth', 'verified'])
 //    ->name('dashboard');
 
-Route::get('/dashboard/ventas/export/excel', [git iniDashboardExportController::class, 'excel'])
+Route::get('/dashboard/ventas/export/excel', [DashboardExportController::class, 'excel'])
     ->name('dashboard.ventas.export.excel')
     ->middleware(['auth']);
 
@@ -33,7 +34,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('corte', CorteController::class)->name('corte');
     Route::get('categories', CategoryController::class)->name('categories');
     Route::get('supplies', SuppliesController::class)->name('supplies');
-
+    Route::get('expense-types', ExpenseTypeController::class)->name('expense-types');
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');

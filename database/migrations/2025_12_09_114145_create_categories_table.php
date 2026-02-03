@@ -13,23 +13,19 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-
-            // Unidad de negocio (ej. Restaurante, Bar, Delivery…)
+            $table->foreignId('expense_type_id')->nullable()->constrained('expense_types')->nullOnDelete();
             $table->string('business_unit', 150);
-
-            // Nombre del gasto (ej. Luz, Renta, Compra de insumos…)
             $table->string('expense_name', 150);
-
-            // Nombre del proveedor (ej. CFE, Coca-Cola…)
             $table->string('provider_name', 150);
-
-            // Activo / Inactivo
             $table->boolean('is_active')->default(true);
-
-            // Si en algún momento quieres auditar quién creó la categoría:
-            // $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-
             $table->timestamps();
+
+            $table->index('business_unit');
+            $table->index('expense_type_id');
+            $table->index(['business_unit', 'expense_type_id']);
+
+            $table->unique(['business_unit', 'expense_type_id', 'expense_name', 'provider_name']);
+
         });
     }
 

@@ -17,14 +17,13 @@
             <flux:input label="Email" wire:model="email" placeholder="Your email" />
             <flux:error name="email" />
 
-            <flux:select wire:model="rol">
-                <flux:select.option>Selecciona el Rol</flux:select.option>
-                @foreach($roles as $rol)
-                    <flux:select.option selected value="{{$rol->name}}">
-                        {{$rol->name}}
-                    </flux:select.option>
+            <flux:select label="Rol" wire:model="role">
+                <flux:select.option value="" disabled> Selecciona el rol</flux:select.option>
+                @foreach($roles as $r)
+                    <flux:select.option value="{{ $r->name }}">{{ $r->name }}</flux:select.option>
                 @endforeach
             </flux:select>
+            <flux:error name="role" />
 
             <div class="flex">
                 <flux:spacer />

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class cash_extractions extends Model
+class CashExtraction extends Model
 {
 
     protected $table = 'cash_extractions';
@@ -34,6 +34,8 @@ class cash_extractions extends Model
         'status',
         'error_message',
         'business_unit',   // 👈 nuevo campo
+        'cash_validation_result',
+        'cash_validation_note',
     ];
 
     protected $casts = [

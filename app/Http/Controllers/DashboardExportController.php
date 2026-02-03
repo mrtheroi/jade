@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\cash_extractions;
+use App\Models\CashExtraction;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -10,7 +11,11 @@ class DashboardExportController extends Controller
 {
     protected function queryWithFilters(Request $request)
     {
-        $query = cash_extractions::query();
+        $query = CashExtraction::query();
+
+        if ($request->filled('business_unit')) {
+            $query->where('business_unit', $request->input('business_unit'));
+        }
 
         if ($request->filled('from')) {
             $query->whereDate('operation_date', '>=', $request->input('from'));
@@ -36,11 +41,8 @@ class DashboardExportController extends Controller
 
         $callback = function () use ($query) {
             $handle = fopen('php://output', 'w');
-
-            // BOM para que Excel detecte UTF-8
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
-            // Encabezados
             fputcsv($handle, [
                 'Fecha operación',
                 'Unidad de negocio',
@@ -78,26 +80,22 @@ class DashboardExportController extends Controller
 
     public function pdf(Request $request)
     {
-        // Para PDF lo ideal es usar barryvdh/laravel-dompdf:
-        // composer require barryvdh/laravel-dompdf
-        //
-        // Aquí te dejo un ejemplo básico:
         $rows = $this->queryWithFilters($request)
             ->orderBy('operation_date')
             ->get();
 
-        $totalSales = $rows->sum(function ($row) {
-            return ($row->cash_sales ?? 0)
-                + ($row->debit_card_sales ?? 0)
-                + ($row->credit_card_sales ?? 0);
-        });
+        $totalSales = $rows->sum(fn ($row) =>
+            ($row->cash_sales ?? 0)
+            + ($row->debit_card_sales ?? 0)
+            + ($row->credit_card_sales ?? 0)
+        );
 
-        // Vista que vamos a imprimir en PDF
         $pdf = \PDF::loadView('exports.dashboard-ventas-pdf', [
-            'rows'       => $rows,
-            'totalSales' => $totalSales,
-            'from'       => $request->input('from'),
-            'to'         => $request->input('to'),
+            'rows'         => $rows,
+            'totalSales'   => $totalSales,
+            'from'         => $request->input('from'),
+            'to'           => $request->input('to'),
+            'businessUnit' => $request->input('business_unit'),
         ])->setPaper('a4', 'portrait');
 
         $fileName = 'ventas_dashboard_' . now()->format('Ymd_His') . '.pdf';

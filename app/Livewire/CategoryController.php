@@ -3,8 +3,9 @@
 namespace App\Livewire;
 
 use App\Models\Category;
+use App\Models\ExpenseType;
 use Livewire\Attributes\On;
-use Livewire\Attributes\Rule;
+use Illuminate\Validation\Rule as VRule;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -12,124 +13,120 @@ use Livewire\WithPagination;
 class CategoryController extends Component
 {
     use WithPagination;
+    public const BUSINESS_UNITS = ['Jade', 'Fuego Ambar', 'KIN'];
 
-    // Buscador sincronizado con la URL
     #[Url]
-    public $search = '';
+    public string $search = '';
 
-    // Control del modal
     public bool $open = false;
 
-    // Id de la categoría actual (para editar)
     public ?int $categoryId = null;
 
-    // Campos del formulario
-    #[Rule('required|string|max:150')]
     public string $business_unit = '';
-
-    #[Rule('required|string|max:150')]
     public string $expense_name = '';
-
-    #[Rule('required|string|max:150')]
+    public ?int $expense_type_id = null;
     public string $provider_name = '';
+    public bool $is_active = true;
 
-    #[Rule('required|boolean')]
-    public $is_active = 1;
+    public function rules(): array
+    {
+        return [
+            'business_unit'   => ['required', 'string', 'max:150', VRule::in(self::BUSINESS_UNITS)],
+            'expense_name'    => ['required', 'string', 'max:150'],
+            'expense_type_id' => ['required', 'exists:expense_types,id'],
+            'provider_name'   => ['required', 'string', 'max:150'],
+            'is_active'       => ['required', 'boolean'],
+        ];
+    }
 
-    // Para confirmar eliminación
-    public ?int $deleteId = null;
-
-    // Al cambiar el buscador, regresamos a la página 1
     public function updatingSearch(): void
     {
         $this->resetPage();
     }
 
-    // Abrir modal en modo "crear"
     public function create(): void
     {
         $this->resetForm();
         $this->open = true;
     }
 
-    // Abrir modal en modo "editar"
     public function edit(int $id): void
     {
         $category = Category::findOrFail($id);
 
-        $this->categoryId    = $category->id;
-        $this->business_unit = $category->business_unit;
-        $this->expense_name  = $category->expense_name;
-        $this->provider_name = $category->provider_name;
-        $this->is_active     = $category->is_active ? 1 : 0;
+        $this->categoryId      = $category->id;
+        $this->business_unit   = $category->business_unit;
+        $this->expense_type_id = $category->expense_type_id;
+        $this->expense_name    = $category->expense_name;
+        $this->provider_name   = $category->provider_name;
+        $this->is_active       = (bool) $category->is_active;
 
         $this->open = true;
     }
 
-    // Cerrar modal y limpiar errores
     public function closeModal(): void
     {
         $this->open = false;
         $this->resetValidation();
     }
 
-    // Guardar (create / update)
     public function save(): void
     {
-        $validated = $this->validate();
+        $data = $this->validate();
 
-        Category::updateOrCreate(['id' => $this->categoryId], $validated,);
+        if ($this->categoryId) {
+            Category::whereKey($this->categoryId)->update($data);
+        } else {
+            Category::create($data);
+        }
 
-        // Opcional: puedes lanzar aquí un toast Livewire/Alpine
          $this->dispatch('notify', message: 'Categoría guardada correctamente.',type: 'success');
 
         $this->closeModal();
         $this->resetForm();
     }
 
-    // Preparar eliminación
-    public function deleteConfirmation($id): void
+    public function deleteConfirmation(int $id): void
     {
         $this->dispatch('showConfirmationModal', userId: $id)->to(ConfirmModal::class);
 
     }
 
     #[On('deleteConfirmed')]
-    public function destroy($id): void
+    public function destroy(int $id): void
     {
-        $category = Category::where('id', $id)->first();
-        $category->delete();
-        $this->dispatch('notify', message: 'La categoria se elimino con éxito', type: 'success');
+        Category::findOrFail($id)->delete();
+        $this->dispatch('notify', message: 'La categoría se eliminó con éxito.', type: 'success');
     }
 
-    // Resetear solo campos del formulario (no buscador ni paginación)
     protected function resetForm(): void
     {
-        $this->categoryId    = null;
-        $this->business_unit = '';
-        $this->expense_name  = '';
-        $this->provider_name = '';
-        $this->is_active     = 1;
+        $this->categoryId      = null;
+        $this->business_unit   = '';
+        $this->expense_name    = '';
+        $this->expense_type_id = null;
+        $this->provider_name   = '';
+        $this->is_active       = true;
     }
 
     public function render()
     {
-        $query = Category::query()
+        $categories = Category::query()
+            ->with('expenseType')
+            ->when(trim($this->search) !== '', function ($q) {
+                $s = trim($this->search);
+                $q->where(fn ($qq) =>
+                $qq->where('business_unit', 'like', "%{$s}%")
+                    ->orWhere('expense_name', 'like', "%{$s}%")
+                    ->orWhere('provider_name', 'like', "%{$s}%")
+                );
+            })
             ->orderBy('business_unit')
-            ->orderBy('expense_name');
+            ->orderBy('expense_name')
+            ->paginate(10);
 
-        if ($this->search) {
-            $search = $this->search;
+        $expenseType = ExpenseType::orderBy('expense_type_name')->get(['id', 'expense_type_name']);
 
-            $query->where(function ($q) use ($search) {
-                $q->where('business_unit', 'like', "%{$search}%")
-                    ->orWhere('expense_name', 'like', "%{$search}%")
-                    ->orWhere('provider_name', 'like', "%{$search}%");
-            });
-        }
-
-        return view('livewire.category-controller', [
-            'categories' => $query->paginate(10),
-        ]);
+        return view('livewire.category-controller', compact('categories', 'expenseType'));
     }
 }
